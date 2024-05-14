@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+{% block content %}
+
+    {% if is_superuser %}
+        <!-- Render content for superuser -->
+        <form method="POST" action="{% url 'product_detail' pk=product.pk %}" enctype="multipart/form-data">
+
+            {% csrf_token %}
+            <div class="mb-3">
+                {{ form.as_p }}
+            </div>
+            <button type="submit" class="btn btn-primary" name="action" value="update">Update Product</button>
+
+            <!-- Delete button -->
+            <a href="{% url 'delete_product' pk=product.pk %}" class="btn btn-info" role="button">Delete Button</a>
+
+        </form>
+
+
+    {% endif %}
+
+
+    <div class="container">
+        <br/>
+
+
+        <div class="card mb-3">
+            <div class="row g-0">
+                <div class="col-md-4">
+                    <img src="{{ product.image.url }}" class="img-fluid rounded-start" alt="...">
+                </div>
+                <div class="col-md-8">
+                    <div class="card-body">
+                        <center>
+                            <h5 class="card-title">{{ product.name }}</h5>
+                            <br/>
+                            <p class="card-text justified">{{ product.description }}</p>
+                            <p>{{ product.category }}</p>
+                            {% if product.is_sale %}
+                                <div class="d-flex justify-content-center small text-warning mb-2">
+                                    <div class="bi-star-fill"></div>
+                                    &nbsp;&nbsp;Sale!&nbsp;&nbsp;
+                                    <div class="bi-star-fill"></div>
+                                </div>
+
+                                <!-- Product price-->
+                                <strike>
+                                    ${{ product.price }}
+                                </strike>
+                                &nbsp;
+                                ${{ product.sale_price }}
+
+
+
+                            {% else %}
+                                ${{ product.price }}
+
+                            {% endif %}
+                            <br/><br/>
+                            <div class="row justify-content-center">
+                                <div class="col-md-2">Quantity:</div>
+                                <div class="col-md-2">
+                                    <select class="form-select form-select-sm" id="qty-cart">
+                                        <option value="1">1</option>
+                                        <option value="2">2</option>
+                                        <option value="3">3</option>
+                                        <option value="4">4</option>
+                                        <option value="5">5</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <br/><br/>
+                            <a href="{% url 'home' %}" class="btn btn-secondary">Home</a>
+                            <button type="button" value="{{ product.id }}" class="btn btn-secondary" id="add-cart">Add
+                                To Cart
+                            </button>
+
+                        </center>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/>
+
+    <script>
+        // Check if button pressed
+        $(document).on('click', '#add-cart', function (e) {
+            e.preventDefault();
+            $.ajax({
+                type: 'POST',
+                url: '{% url 'cart_add' %}',
+                data: {
+                    product_id: $('#add-cart').val(),
+                    product_qty: $('#qty-cart option:selected').text(),
+                    csrfmiddlewaretoken: '{{ csrf_token }}',
+                    action: 'post'
+                },
+
+                success: function (json) {
+                    //console.log(json)
+                    document.getElementById("cart_quantity").textContent = json.qty
+                    location.reload();
+                },
+
+                error: function (xhr, errmsg, err) {
+
+                }
+
+
+            });
+
+
+        })
+
+
+        // Update product using Ajax
+        $(document).ready(function () {
+            $('#update-product-form').submit(function (e) {
+                e.preventDefault();
+
+                var formData = new FormData(this);
+
+                $.ajax({
+                    url: "/products/" + {{ product.pk }} + "/", // Update with your product detail URL pattern
+                    type: "POST",
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function (response) {
+                        if (response.success) {
+                            // Success message
+                            console.log("Product updated successfully!");
+                            // Update the page or redirect as needed
+                        } else {
+                            // Error message
+                            console.error("Error updating product:", response.errors);
+                            // Display error messages on the page
+                        }
+                    },
+                    error: function (jqXHR, textStatus, errorThrown) {
+                        console.error("Error:", textStatus, errorThrown);
+                        // Handle errors appropriately
+                    }
+                });
+            });
+
+            // Delete product using Ajax
+            $('#delete-product-btn').click(function () {
+                var productId = $(this).data('productId');
+
+                $.ajax({
+                    url: "/product_detail/" + {{ product.pk }} + "/",
+                    // Update with your product delete URL pattern
+                    type: "POST",
+                    data: {action: "delete"}, // Send action as data
+                    success: function (response) {
+                        if (response.message === "Product deleted successfully") {
+                            console.log("Product deleted!");
+                            // Remove product element from the page or redirect
+                        } else {
+                            console.error("Error deleting product:", response.message);
+                            // Display error message on the page
+                        }
+                    },
+                    error: function (jqXHR, textStatus, errorThrown) {
+                        console.error("Error:", textStatus, errorThrown);
+                        // Handle errors appropriately
+                    }
+                });
+            });
+        });
+
+    </script>
+{% endblock %}
+

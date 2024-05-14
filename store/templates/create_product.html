@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block content %}
+    <!-- Render content for superuser -->
+    <form method="POST" action="{% url 'create_product' %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div>
+            {{ form.as_p }}
+        </div>
+
+        <button type="submit" class="btn btn-primary">Create Product</button>
+    </form>
+
+
+{% endblock %}
